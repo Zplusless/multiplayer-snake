@@ -22,34 +22,36 @@ class Game:
         for y in range(0, settings.FIELD_SIZE_Y):
             self._world.append([Char(" ", 0)] * settings.FIELD_SIZE_X)
 
-    def reset_world(self):
+    async def reset_world(self):
         for y in range(0, settings.FIELD_SIZE_Y):
             for x in range(0, settings.FIELD_SIZE_X):
                 if self._world[y][x].char != " ":
                     self._world[y][x] = Char(" ", 0)
-        self.send_all("reset_world")
+        print('reset world')
+        await self.send_all("reset_world")
 
-    def new_player(self, name, ws):
+    async def new_player(self, name, ws):
         self._last_id += 1
         player_id = self._last_id
         if( name != "visitor"):
-            self.send_personal(ws, "handshake", name, player_id)
-            self.send_personal(ws, "world", self._world)
+            await self.send_personal(ws, "handshake", name, player_id)
+            await self.send_personal(ws, "world", self._world)
 
-        self.send_personal(ws, *self.top_scores_msg())
+        await self.send_personal(ws, *self.top_scores_msg())
         for p in self._players.values():
             if p.alive:
-                self.send_personal(ws, "p_joined", p._id, p.name, p.color, p.score)
+                await self.send_personal(ws, "p_joined", p._id, p.name, p.color, p.score)
 
         player = Player(player_id, name, ws)
         self._players[name] = player
+        print(f'new player: {name}')
         return player
 
     # 将新的接入的ws记录在内
-    def add_player_ws(self, player: Player, ws):
+    async def add_player_ws(self, player: Player, ws):
         player.ws.append(ws)
-        self.send_personal(ws, "handshake", player.name, player._id)
-        self.send_personal(ws, "world", self._world)
+        await self.send_personal(ws, "handshake", player.name, player._id)
+        await self.send_personal(ws, "world", self._world)
         print(f'player-{player._id} ws list: {player.ws}')
 
     def get_player_by_name(self, name):
@@ -58,12 +60,13 @@ class Game:
         else:
             return None
 
-    def join(self, player):
+    async def join(self, player):
+        print('new player want to join')
         if player.name != "visitor":
             if player.alive:
                 return
             if self.count_alive_players() == settings.MAX_PLAYERS:
-                self.send_personal(player.ws, "error", "Maximum players reached")
+                await self.send_personal(player.ws, "error", "Maximum players reached")
                 return
             # pick a color
             if not len(self._colors):
@@ -74,20 +77,24 @@ class Game:
             # init snake
             player.new_snake(color)
             # notify all about new player
-            self.send_all("p_joined", player._id, player.name, color, 0)
+            await self.send_all("p_joined", player._id, player.name, color, 0)
 
-    def enable_join_non_main_ws(self, player: Player):
+            print('join finish')
+
+    async def enable_join_non_main_ws(self, player: Player):
         for ws in player.ws:
             if ws!=player.main_ws:
-                self.send_personal(ws, "p_enable_join", player._id)
+                await self.send_personal(ws, "p_enable_join", player._id)
+        
+        print("non-main ws players are allowed to join")
 
 
-    def game_over(self, player):
+    async def game_over(self, player):
         player.alive = False
-        self.send_all("p_gameover", player._id)
+        await self.send_all("p_gameover", player._id)
         self._colors.append(player.color)
         self.calc_top_scores(player)
-        self.send_all(*self.top_scores_msg())
+        await self.send_all(*self.top_scores_msg())
 
         render = player.render_game_over()
         if not self.count_alive_players():
@@ -130,7 +137,8 @@ class Game:
         f.close()
 
 
-    def player_disconnected(self, player: Player, ws):
+    async def player_disconnected(self, player: Player, ws):
+        print(f'{player.name} disconnect')
         
         if ws == player.main_ws:
             # for ws in player.ws:
@@ -138,8 +146,8 @@ class Game:
             ## player.ws.clear()  # 主ws断开，则结束
             player.ws.remove(ws)
             if player.alive:
-                render = self.game_over(player)
-                self.apply_render(render)
+                render = await self.game_over(player)
+                await self.apply_render(render)
 
             del self._players[player.name]
             del player
@@ -152,7 +160,8 @@ class Game:
     def count_alive_players(self):
         return sum([int(p.alive) for p in self._players.values()])
 
-    def next_frame(self):
+    async def next_frame(self):
+        print('next frame')
         messages = []
         render_all = []
         for p_name, p in self._players.items():
@@ -181,7 +190,7 @@ class Game:
                     p.score += grow
                     messages.append(["p_score", p_name, p.score])
                 elif char != " ":
-                    render_all += self.game_over(p)
+                    render_all += await self.game_over(p)
                     continue
 
                 render_all += p.render_move()
@@ -199,10 +208,10 @@ class Game:
         # render_all += self.spawn_stone()
 
         # send all render messages
-        self.apply_render(render_all)
+        await self.apply_render(render_all)
         # send additional messages
         if messages:
-            self.send_all_multi(messages)
+            await self.send_all_multi(messages)
 
     def _get_spawn_place(self):
         x = None
@@ -234,14 +243,14 @@ class Game:
                 render += [Draw(x, y, '#', 0)]
         return render
 
-    def apply_render(self, render):
+    async def apply_render(self, render):
         messages = []
         for draw in render:
             # apply to local
             self._world[draw.y][draw.x] = Char(draw.char, draw.color)
             # send messages
             messages.append(["render"] + list(draw))
-        self.send_all_multi(messages)
+        await self.send_all_multi(messages)
 
     def render_text(self, text, color):
         # render in the center of play field
@@ -252,21 +261,21 @@ class Game:
             render.append(Draw(posx + i, posy, text[i], color))
         return render
 
-    def send_personal(self, ws, *args):
+    async def send_personal(self, ws, *args):
         if not isinstance(ws, list):
             ws = [ws]
         
         msg = json.dumps([args])
         for s in ws:
-            s.send_str(msg)
+            await s.send_str(msg)
 
-    def send_all(self, *args):
-        self.send_all_multi([args])
+    async def send_all(self, *args):
+        await self.send_all_multi([args])
 
-    def send_all_multi(self, commands):
+    async def send_all_multi(self, commands):
         msg = json.dumps(commands)
         for player in self._players.values():
             for ws in player.ws:
                 if ws:
-                    ws.send_str(msg)
+                    await ws.send_str(msg)
 
