@@ -54,13 +54,7 @@ async def wshandler(request):
                         player = await game.new_player(name, ws)
                         
             elif data[0] == "join":
-                if not game.running:  # 只有第一个用户join才会触发reset_world
-                    await game.reset_world()
-
-                    print("Starting game loop")
-                    asyncio.ensure_future(game_loop(game))
-                    # await asyncio.create_task(game_loop(game))
-                    # await game_loop(game)
+                
                 
                 # 首次join的player没有main_ws,有main_ws的必为已经join过的
                 if not player.main_ws:
@@ -71,6 +65,14 @@ async def wshandler(request):
 
                 # 释放非main_ws对应client的join按键
                 await game.enable_join_non_main_ws(player)
+
+                if not game.running:  # 只有第一个用户join才会触发reset_world
+                    await game.reset_world()
+
+                    print("Starting game loop")
+                    asyncio.ensure_future(game_loop(game))
+                    # await asyncio.create_task(game_loop(game))
+                    # await game_loop(game)
 
                 
 
@@ -83,10 +85,10 @@ async def wshandler(request):
     print("Closed connection")
     return ws
 
-async def game_loop(game):
+async def game_loop(game:Game):
     game.running = True
     while 1:
-        print('new game loop')
+        # print('new game loop')
         await game.next_frame()
         if not game.count_alive_players():
             print("Stopping game loop")

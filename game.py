@@ -4,6 +4,7 @@ import json
 import settings
 from player import Player
 from datatypes import Char, Draw
+from typing import Dict
 
 
 class Game:
@@ -11,7 +12,7 @@ class Game:
     def __init__(self):
         self._last_id = 0
         self._colors = []
-        self._players = {}
+        self._players:Dict[str, Player] = {}
         self._top_scores = []
         self._world = []
         self.running = False
@@ -244,6 +245,7 @@ class Game:
         return render
 
     async def apply_render(self, render):
+        print('apply render')
         messages = []
         for draw in render:
             # apply to local
@@ -251,6 +253,7 @@ class Game:
             # send messages
             messages.append(["render"] + list(draw))
         await self.send_all_multi(messages)
+        print('render finish')
 
     def render_text(self, text, color):
         # render in the center of play field
@@ -273,9 +276,11 @@ class Game:
         await self.send_all_multi([args])
 
     async def send_all_multi(self, commands):
+        print('start send all multi')
         msg = json.dumps(commands)
-        for player in self._players.values():
+       for player in self._players.values():
             for ws in player.ws:
                 if ws:
                     await ws.send_str(msg)
+                    print(f'send msg to {player.name}')
 
