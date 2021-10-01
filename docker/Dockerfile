@@ -13,4 +13,4 @@ RUN  \
   && rm -rf /var/lib/apt/lists/* \
   && rm -rf ~/.cache/pip
 
-ENTRYPOINT  ["/bin/bash"]
+ENTRYPOINT [ "/bin/bash", "-l", "-c" ]
