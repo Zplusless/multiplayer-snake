@@ -37,7 +37,7 @@ class Game:
             self.send_personal(ws, "world", self._world)
 
         self.send_personal(ws, *self.top_scores_msg())
-        for p in self._players.values():
+        for p in self._players.values():  # 把已有player的信息发给新用户
             if p.alive:
                 self.send_personal(ws, "p_joined", p._id, p.name, p.color, p.score)
 
@@ -77,6 +77,8 @@ class Game:
             self.send_all("p_joined", player._id, player.name, color, 0)
 
     def enable_join_non_main_ws(self, player: Player):
+        self.send_personal(player.main_ws, "p_join_switch_confirm", player._id)
+
         for ws in player.ws:
             if ws!=player.main_ws:
                 self.send_personal(ws, "p_enable_join", player._id)

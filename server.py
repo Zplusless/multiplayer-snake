@@ -61,7 +61,7 @@ async def wshandler(request):
                     asyncio.ensure_future(game_loop(game))
                 
                 # 首次join的player没有main_ws,有main_ws的必为已经join过的
-                if not player.main_ws:
+                if not player.main_ws: # 仅第一次加入会触发
                     game.join(player)
 
                 # 设定主ws，只有主ws的方向操作才有效

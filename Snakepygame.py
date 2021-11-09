@@ -256,6 +256,10 @@ class SnakeClient(object):
                         id = args[1]
                         if id == self.playerId:
                             self.btnJoin.setEnabled(True)
+                    elif cmd == "p_join_switch_confirm":
+                        id = args[1]
+                        if id == self.playerId:
+                            print('join switch finished')
                     elif cmd == "p_gameover":
                         id = args[1]
                         # remove
