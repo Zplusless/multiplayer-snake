@@ -33,8 +33,8 @@ class Player:
         self.ws = [ws]
         self.main_ws = None
         self.alive = False
-        self.direction = None
-        self.intended_direction = None
+        self.direction = None  # 记录当前移动方向
+        self.intended_direction = None  # 记录按键后新的移动方向
 
     def new_snake(self, color):
         self.color = color

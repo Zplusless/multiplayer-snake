@@ -81,7 +81,7 @@ async def wshandler(request):
     print("Closed connection")
     return ws
 
-async def game_loop(game):
+async def game_loop(game:Game):
     game.running = True
     while 1:
         game.next_frame()

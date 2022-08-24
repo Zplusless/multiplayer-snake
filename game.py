@@ -177,7 +177,7 @@ class Game:
 
                 char = self._world[pos.y][pos.x].char
                 grow = 0
-                if char.isdigit():
+                if char.isdigit(): # 一个字符串中的字符全部为数字字符则返回True
                     # start growing next turn in case we eaten a digit
                     grow = int(char)
                     p.score += grow
