@@ -233,10 +233,10 @@ class SnakeClient(object):
                         if id == self.playerId:
                             self.btnJoin.setEnabled(False)
                     elif cmd == "render":
-                        x = int(args[1])
-                        y = int(args[2])
-                        temp = str(args[3])
-                        color = int(args[4])
+                        x = int(args[1])  # x轴坐标
+                        y = int(args[2])  # y轴坐标 
+                        temp = str(args[3])  # 符号
+                        color = int(args[4]) # 颜色id
                         item = StandardItem()
                         # Item.setTextAlignment(Qt.AlignCenter | Qt.AlignHCenter | Qt.AlignHCenter)
                         if temp == " ":
@@ -315,17 +315,19 @@ class SnakeClient(object):
 
     async def game(self):
         async with websockets.connect("ws://" + self.HOST + ":" + self.PORT + "/connect") as websocket:
-            await self.send_msg(websocket, ["new_player", self.playerName])
             # 连接成功发送用户信息登录
-
+            await self.send_msg(websocket, ["new_player", self.playerName])
+            
+            # 参加游戏按钮和断开连接按钮可以点击
             self.btnJoin.setEnabled(True)
             self.btnDisConnect.setEnabled(True)
-            # 参加游戏按钮和断开连接按钮可以点击
-
-            client = asyncio.get_event_loop().create_task(self.client(websocket))
+            
+            
             # 客户端界面协程
-            rec = asyncio.get_event_loop().create_task(self.recv_msg(websocket))
+            client = asyncio.get_event_loop().create_task(self.client(websocket))
             # 消息协程
+            rec = asyncio.get_event_loop().create_task(self.recv_msg(websocket))
+            
             await client
             await rec
             # 客户端界面与消息并发
@@ -336,13 +338,15 @@ class SnakeClient(object):
                 temp = str(data[y][x][0])
                 color = int(data[y][x][1])
                 item = StandardItem()
-                if temp == " ":
+                if temp == " ": # 空白地点
                     item.setBackground(pg.Color(0, 0, 0))
-                elif temp == "%":
+                elif temp == "%": # 蛇头
                     item.setBackground(pg.Color(130, 130, 130))
+
+                #           蛇身子          蛇尾巴          食物                石头          
                 elif temp == "@" or temp == "*" or '0' <= temp <= '9' or temp == '#':
                     item.setBackground(pg.Color(self.color[color][0], self.color[color][1], self.color[color][2]))
-                else:
+                else: # 墙（edge=1）
                     item.edge = 1
                     item.setText(temp)
                     print(temp)
