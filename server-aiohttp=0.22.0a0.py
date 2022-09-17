@@ -3,7 +3,6 @@ import asyncio
 import json
 from player import Player
 from aiohttp import web
-import aiohttp
 
 import settings
 from game import Game
@@ -34,7 +33,7 @@ async def wshandler(request):
     player = None
     while True:
         msg = await ws.receive()
-        if msg.type == aiohttp.WSMsgType.TEXT:
+        if msg.tp == web.MsgType.text:
             print("Got message %s" % msg.data)
 
             data = json.loads(msg.data)
@@ -50,34 +49,34 @@ async def wshandler(request):
                     name = data[1]
                     player:Player = game.get_player_by_name(name)
                     if player:
-                        await game.add_player_ws(player, ws)
+                        game.add_player_ws(player, ws)
                     else:
-                        player = await game.new_player(name, ws)
+                        player = game.new_player(name, ws)
                         
             elif data[0] == "join":
                 if not game.running:  # 只有第一个用户join才会触发reset_world
-                    await game.reset_world()
+                    game.reset_world()
 
                     print("Starting game loop")
                     asyncio.ensure_future(game_loop(game))
                 
                 # 首次join的player没有main_ws,有main_ws的必为已经join过的
                 if not player.main_ws: # 仅第一次加入会触发
-                    await game.join(player)
+                    game.join(player)
 
                 # 设定主ws，只有主ws的方向操作才有效
                 player.main_ws = ws
 
                 # 释放非main_ws对应client的join按键
-                await game.enable_join_non_main_ws(player)
+                game.enable_join_non_main_ws(player)
 
                 
 
-        elif msg.type == aiohttp.WSMsgType.CLOSE:
+        elif msg.tp == web.MsgType.close:
             break
 
     if player:
-        await game.player_disconnected(player, ws)
+        game.player_disconnected(player, ws)
 
     print("Closed connection")
     return ws
@@ -85,7 +84,7 @@ async def wshandler(request):
 async def game_loop(game:Game):
     game.running = True
     while 1:
-        await game.next_frame()
+        game.next_frame()
         if not game.count_alive_players():
             print("Stopping game loop")
             break
