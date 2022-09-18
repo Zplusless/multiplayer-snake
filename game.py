@@ -6,6 +6,7 @@ from player import Player
 from datatypes import Char, Draw
 
 import asyncio
+import time 
 
 class Game:
 
@@ -29,6 +30,7 @@ class Game:
                 if self._world[y][x].char != " ":
                     self._world[y][x] = Char(" ", 0)
         await self.send_all("reset_world")
+        print('Reset word ---> done')
 
     async def new_player(self, name, ws):
         self._last_id += 1
@@ -206,6 +208,8 @@ class Game:
         # send additional messages
         if messages:
             await self.send_all_multi(messages)
+        
+        # print(f'next frame at {time.time()}---> done')
 
     def _get_spawn_place(self):
         x = None
@@ -245,6 +249,7 @@ class Game:
             # send messages
             messages.append(["render"] + list(draw))
         await self.send_all_multi(messages)
+        print(f'apply render ---> {messages}')
 
     def render_text(self, text, color):
         # render in the center of play field
@@ -272,4 +277,6 @@ class Game:
             for ws in player.ws:
                 if ws:
                     await ws.send_str(msg)
+        
+        # print(f'finish send all for one time')
 

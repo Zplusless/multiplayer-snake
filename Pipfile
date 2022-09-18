@@ -11,4 +11,4 @@ aiohttp = "~=0.22.0a0"
 [dev-packages]
 
 [requires]
-python_version = "3.7"
+python_version = "*"

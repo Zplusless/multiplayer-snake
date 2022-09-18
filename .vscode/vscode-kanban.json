@@ -1,0 +1,20 @@
+{
+  "todo": [],
+  "in-progress": [
+    {
+      "assignedTo": {
+        "name": "Zplusless"
+      },
+      "creation_time": "2022-09-18T03:40:33.826Z",
+      "description": {
+        "content": "client端收不到server端发出的`[\"render\"， xxxx]`的命令",
+        "mime": "text/markdown"
+      },
+      "id": "1",
+      "references": [],
+      "title": "curses版本的Snake-noGUI存在bug"
+    }
+  ],
+  "testing": [],
+  "done": []
+}
